@@ -15,31 +15,25 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
+
+type Repo struct {
+    Full_name string `json:"full_name"`
+}
 
 func printRepos(body []byte) {
 	// take the response body and parse for print_repos
 	// TODO: filter out repose that were forked so we only scan repos we created
 
-	var json_data []map[string]string
-	err := json.Unmarshal(body, &json_data)
-	if err != nil {
-		log.Println("Error:", err)
-	}
-
-	for _, object := range json_data {
-		fmt.Println(object["full_name"])
-	}
-}
-
-func hasRepos(body []byte) bool {
-	// make sure the user we are checking on has repos
-	// if they do not github returns a message like
-	// {"message": "Not Found"}
-
-	var message map[string]interface{}
-	err := json.Unmarshal(body, &message)
-	return err != nil
+    var json_data []Repo
+    err := json.Unmarshal(body, &json_data)
+    if err != nil {
+        log.Println("Error:", err)
+    }
+    for _, object := range json_data {
+        fmt.Println(object.Full_name)
+    }
 }
 
 func getToken() (string, error) {
@@ -64,7 +58,7 @@ func getToken() (string, error) {
 	return "", errors.New("empty token")
 }
 
-func makeRequest(url string) *http.Response {
+func makeRequest(url string, client *http.Client) *http.Response {
 	// make a get request to github api to do something
 
 	token, err := getToken()
@@ -77,7 +71,6 @@ func makeRequest(url string) *http.Response {
 		log.Println("Error:", err)
 	}
 	req.Header.Add("Authorization", token)
-	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -107,6 +100,7 @@ func nextPage(link []string) (string, bool) {
 
 func main() {
 	url := "https://api.github.com/users/"
+	client := &http.Client{Timeout: 5 * time.Second}
 
 	file, err := os.Open("users.txt")
 	if err != nil {
@@ -117,15 +111,16 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		user := scanner.Text()
-		resp := makeRequest(url + user + "/repos")
+		resp := makeRequest(url + user + "/repos", client)
 		defer resp.Body.Close()
+
 		for {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				log.Println("Error:", err)
 			}
 
-			if hasRepos(body) {
+			if resp.StatusCode != 404 {
 				printRepos(body)
 			}
 
@@ -139,7 +134,7 @@ func main() {
 				break
 			}
 
-			resp = makeRequest(next)
+			resp = makeRequest(next, client)
 		}
 
 	}
