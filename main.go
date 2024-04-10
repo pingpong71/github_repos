@@ -19,20 +19,20 @@ import (
 )
 
 type Repo struct {
-    Full_name string `json:"full_name"`
+    FullName string `json:"full_name"`
 }
 
 func printRepos(body []byte) {
-	// take the response body and parse for print_repos
+	// take the response body and parse for printRepos
 	// TODO: filter out repose that were forked so we only scan repos we created
 
-    var json_data []Repo
-    err := json.Unmarshal(body, &json_data)
+    var jsonData []Repo
+    err := json.Unmarshal(body, &jsonData)
     if err != nil {
         log.Println("Error:", err)
     }
-    for _, object := range json_data {
-        fmt.Println(object.Full_name)
+    for _, object := range jsonData {
+        fmt.Println(object.FullName)
     }
 }
 
@@ -80,19 +80,20 @@ func makeRequest(url string, client *http.Client) *http.Response {
 	return resp
 }
 
+
+var re := regexp.MustCompile(`\<(.*)\>\;\s+rel\=\"(.*)\"`)
 func nextPage(link []string) (string, bool) {
 	// github api does pagination so we need to handle that
 	// https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api?apiVersion=2022-11-28
 
-	link_map := map[string]string{}
+	linkMap := map[string]string{}
 	for _, item := range strings.Split(link[0], ",") {
-		re := regexp.MustCompile(`\<(.*)\>\;\s+rel\=\"(.*)\"`)
 		match := re.FindStringSubmatch(item)
-		link_map[match[2]] = match[1]
+		linkMap[match[2]] = match[1]
 	}
 
-	if _, exists := link_map["next"]; exists {
-		return link_map["next"], true
+	if _, exists := linkMap["next"]; exists {
+		return linkMap["next"], true
 	}
 
 	return "", false
@@ -125,12 +126,12 @@ func main() {
 			}
 
 			var next string
-			var do_next bool
+			var doNext bool
 			if len(resp.Header["Link"]) > 0 {
-				next, do_next = nextPage(resp.Header["Link"])
+				next, doNext = nextPage(resp.Header["Link"])
 			}
 
-			if !do_next {
+			if !doNext {
 				break
 			}
 
