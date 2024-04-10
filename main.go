@@ -19,21 +19,21 @@ import (
 )
 
 type Repo struct {
-    FullName string `json:"full_name"`
+	FullName string `json:"full_name"`
 }
 
 func printRepos(body []byte) {
 	// take the response body and parse for printRepos
 	// TODO: filter out repose that were forked so we only scan repos we created
 
-    var jsonData []Repo
-    err := json.Unmarshal(body, &jsonData)
-    if err != nil {
-        log.Println("Error:", err)
-    }
-    for _, object := range jsonData {
-        fmt.Println(object.FullName)
-    }
+	var jsonData []Repo
+	err := json.Unmarshal(body, &jsonData)
+	if err != nil {
+		log.Println("Error:", err)
+	}
+	for _, object := range jsonData {
+		fmt.Println(object.FullName)
+	}
 }
 
 func getToken() (string, error) {
@@ -80,8 +80,8 @@ func makeRequest(url string, client *http.Client) *http.Response {
 	return resp
 }
 
+var re = regexp.MustCompile(`\<(.*)\>\;\s+rel\=\"(.*)\"`)
 
-var re := regexp.MustCompile(`\<(.*)\>\;\s+rel\=\"(.*)\"`)
 func nextPage(link []string) (string, bool) {
 	// github api does pagination so we need to handle that
 	// https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api?apiVersion=2022-11-28
@@ -112,7 +112,7 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		user := scanner.Text()
-		resp := makeRequest(url + user + "/repos", client)
+		resp := makeRequest(url+user+"/repos", client)
 		defer resp.Body.Close()
 
 		for {
