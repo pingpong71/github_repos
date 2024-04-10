@@ -1,4 +1,7 @@
 package main
+// The purpose of this program is to open a list of users
+// and return all the repos the user has that are public via the
+// github api.
 
 import (
 	"bufio"
